@@ -123,8 +123,9 @@ class RDF_NodeClassification(NodeClassificationDataset):
         train_idx = th.nonzero(train_mask, as_tuple=False).squeeze()
         test_idx = th.nonzero(test_mask, as_tuple=False).squeeze()
         if validation:
-            val_idx = train_idx[:len(train_idx) // 5]
-            train_idx = train_idx[len(train_idx) // 5:]
+            random_int = th.randperm(len(train_idx))
+            val_idx = train_idx[random_int[:len(train_idx) // 5]]
+            train_idx = train_idx[random_int[len(train_idx) // 5:]]
         else:
             val_idx = train_idx
             train_idx = train_idx
@@ -241,8 +242,9 @@ class HIN_NodeClassification(NodeClassificationDataset):
             train_idx = th.tensor(train.indices)
             test_idx = th.tensor(test.indices)
             if validation:
-                val_idx = train_idx[:len(train_idx) // 10]
-                train_idx = train_idx[len(train_idx) // 10:]
+                random_int = th.randperm(len(train_idx))
+                val_idx = train_idx[random_int[:len(train_idx) // 10]]
+                train_idx = train_idx[random_int[len(train_idx) // 10:]]
             else:
                 val_idx = train_idx
                 train_idx = train_idx
@@ -257,8 +259,9 @@ class HIN_NodeClassification(NodeClassificationDataset):
                     val_idx = th.nonzero(val_mask, as_tuple=False).squeeze()
                     pass
                 else:
-                    val_idx = train_idx[:len(train_idx) // 10]
-                    train_idx = train_idx[len(train_idx) // 10:]
+                    random_int = th.randperm(len(train_idx))
+                    val_idx = train_idx[random_int[:len(train_idx) // 10]]
+                    train_idx = train_idx[random_int[len(train_idx) // 10:]]
             else:
                 val_idx = train_idx
                 train_idx = train_idx
@@ -373,8 +376,9 @@ class HGB_NodeClassification(NodeClassificationDataset):
             train_idx = th.tensor(train.indices)
             test_idx = th.tensor(test.indices)
             if validation:
-                valid_idx = train_idx[:len(train_idx) // 5]
-                train_idx = train_idx[len(train_idx) // 5:]
+                random_int = th.randperm(len(train_idx))
+                valid_idx = train_idx[random_int[:len(train_idx) // 5]]
+                train_idx = train_idx[random_int[len(train_idx) // 5:]]
             else:
                 valid_idx = train_idx
                 train_idx = train_idx
@@ -389,8 +393,9 @@ class HGB_NodeClassification(NodeClassificationDataset):
                     valid_idx = th.nonzero(val_mask, as_tuple=False).squeeze()
                     pass
                 else:
-                    valid_idx = train_idx[:len(train_idx) // 5]
-                    train_idx = train_idx[len(train_idx) // 5:]
+                    random_int = th.randperm(len(train_idx))
+                    valid_idx = train_idx[random_int[:len(train_idx) // 5]]
+                    train_idx = train_idx[random_int[len(train_idx) // 5:]]
             else:
                 valid_idx = train_idx
                 train_idx = train_idx
