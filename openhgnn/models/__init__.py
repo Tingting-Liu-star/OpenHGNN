@@ -59,8 +59,10 @@ SUPPORTED_MODELS = {
     'Metapath2vec': 'openhgnn.models.Metapath2vec',
     'HAN': 'openhgnn.models.HAN',
     #'HGT': 'openhgnn.models.HGT',
+    'HeCo': 'openhgnn.models.HeCo',
     'HGT': 'openhgnn.models.HGT_hetero',
     'GTN': 'openhgnn.models.GTN_sparse',
+    'fastGTN': 'openhgnn.models.fastGTN',
     'MHNF': 'openhgnn.models.MHNF',
     'MAGNN': 'openhgnn.models.MAGNN',
     'HeGAN':'openhgnn.models.HeGAN',
@@ -72,7 +74,6 @@ SUPPORTED_MODELS = {
     'HGSL': 'openhgnn.models.HGSL',
     'GCN': 'space4hgnn.homo_models.GCN',
     'GAT': 'space4hgnn.homo_models.GAT',
-    'homo_GNN': 'space4hgnn.homo_models.homo_GNN',
-    'relation_HGNN': 'space4hgnn.relation_models.rel_HGNN',
-    'mp_GNN': 'space4hgnn.metapath_models.mp_GNN'    
+    'homo_GNN': 'openhgnn.models.homo_GNN',
+    'general_HGNN': 'openhgnn.models.general_HGNN',
 }
