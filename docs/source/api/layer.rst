@@ -1,61 +1,23 @@
 Layer
 =======
 
-HeteroEmbedLayer
----------------------------------
+.. currentmodule:: openhgnn.layers
 
-.. automodule:: openhgnn.layers.EmbedLayer
+.. autosummary::
+    :nosignatures:
+    :toctree: ../generated
+    :template: _templates/class.rst
 
-HeteroEmbedLayer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: openhgnn.layers.EmbedLayer.HeteroEmbedLayer
-    :members:
-    :show-inheritance:
-
-HeteroLinear
-------------------------------------
-
-.. automodule:: openhgnn.layers.HeteroLinear
-
-GeneralLinear
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: openhgnn.layers.HeteroLinear.GeneralLinear
-    :members:
-    :show-inheritance:
-
-HeteroLinearLayer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: openhgnn.layers.HeteroLinear.HeteroLinearLayer
-    :members:
-    :show-inheritance:
-
-HeteroMLPLayer
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: openhgnn.layers.HeteroLinear.HeteroMLPLayer
-    :members:
-    :show-inheritance:
-
-HeteroFeature
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. autoclass:: openhgnn.layers.HeteroLinear.HeteroFeature
-    :members:
-    :show-inheritance:
-
-MetapathConv
-------------------------------------
-
-.. automodule:: openhgnn.layers.MetapathConv
-    :members:
-    :show-inheritance:
-
-HeteroGraphConv
-----------------
-
-.. autoclass:: dgl.nn.pytorch.HeteroGraphConv
-   :members:
-   :show-inheritance:
+    openhgnn.layers.HeteroEmbedLayer
+    openhgnn.layers.GeneralLinear
+    openhgnn.layers.HeteroLinearLayer
+    openhgnn.layers.HeteroMLPLayer
+    openhgnn.layers.HeteroFeature
+    openhgnn.layers.MetapathConv
+    openhgnn.layers.HeteroGraphConv
+    openhgnn.layers.ATTConv
+    openhgnn.layers.MacroConv
+    openhgnn.layers.SemanticAttention
+    openhgnn.layers.CompConv
+    openhgnn.layers.AttConv
+    openhgnn.layers.LSTMConv

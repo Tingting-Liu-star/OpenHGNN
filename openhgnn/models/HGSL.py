@@ -9,9 +9,7 @@ from . import BaseModel, register_model
 @register_model('HGSL')
 class HGSL(BaseModel):
     r"""
-    Description
-    -----------
-    HGSL, Heterogeneous Graph Structure Learning from paper <http://www.shichuan.org/doc/100.pdf>.
+    HGSL, Heterogeneous Graph Structure Learning from `paper <http://www.shichuan.org/doc/100.pdf>`_.
 
     Parameters
     ----------
@@ -89,7 +87,10 @@ class HGSL(BaseModel):
 
         feat_dims = dict()
         for ntype in hg.ntypes:
-            feat_dims[ntype] = hg.nodes[ntype].data['h'].shape[1]
+            if 'h' in hg.nodes[ntype].data.keys():
+                feat_dims[ntype] = hg.nodes[ntype].data['h'].shape[1]
+            else:
+                feat_dims[ntype] = 128
 
         # Extract undirected_relations
         und_rels = args.undirected_relations.split(',')
@@ -101,11 +102,26 @@ class HGSL(BaseModel):
         device = hg.device
 
         metapaths = list()
-        for feature_name in hg.nodes["paper"].data.keys():
-            if "m2v" in feature_name:
-                metapaths.append(feature_name)
-
-        mp_emb_dim = hg.nodes["paper"].data["pap_m2v_emb"].shape[1]
+        if args.dataset_name == 'acm4GTN':
+            for feature_name in hg.nodes["paper"].data.keys():
+                if "m2v" in feature_name:
+                    metapaths.append(feature_name)
+            mp_emb_dim = hg.nodes["paper"].data["pap_m2v_emb"].shape[1]
+        
+        elif args.dataset_name == 'dblp4GTN':
+            for feature_name in hg.nodes['paper'].data.keys():
+                if 'h' not in feature_name:
+                    metapaths.append(feature_name)
+            mp_emb_dim = hg.nodes['paper'].data['PAPCP'].shape[1]
+        
+        elif args.dataset_name == 'yelp4HGSL':
+            for feature_name in hg.nodes['b'].data.keys():
+                if 'h' not in feature_name:
+                    metapaths.append(feature_name)
+            mp_emb_dim = hg.nodes['b'].data['bub'].shape[1]
+            
+        else:
+            raise NotImplemented("HGSL on dataset {} has not been implemented".format(args.dataset_name))
 
         return cls(feat_dims=feat_dims, undirected_relations=undirected_relations, device=device, metapaths=metapaths,
                    mp_emb_dim=mp_emb_dim, hidden_dim=args.hidden_dim, num_heads=args.num_heads,
@@ -168,7 +184,6 @@ class HGSL(BaseModel):
             Every node type in graph should have its metapath2vec embedding feature named 'xxx_m2v_emb'
             and the same feature dimension.
         h_features : dict
-            Not used.
 
         Returns
         --------
@@ -192,7 +207,9 @@ class HGSL(BaseModel):
                 column_range = node_indexes[canonical_etype[2]]
                 new_homo_adj[row_range[0]:row_range[1], column_range[0]:column_range[1]] = new_adj
 
-            new_homo_adj += new_homo_adj.t()
+            temp = new_homo_adj.clone()
+            new_homo_adj = temp + new_homo_adj.t()
+            # new_homo_adj += new_homo_adj.t()
             new_homo_adj = F.normalize(new_homo_adj, dim=0, p=1)
             return new_homo_adj
 
@@ -207,7 +224,10 @@ class HGSL(BaseModel):
         # Heterogeneous Feature Mapping
         mapped_feats = dict()
         for ntype in self.node_types:
-            mapped_feats[ntype] = self.non_linear(self.encoder[ntype](hg.nodes[ntype].data['h']))
+            if 'h' in hg.nodes[ntype].data.keys():
+                mapped_feats[ntype] = self.non_linear(self.encoder[ntype](hg.nodes[ntype].data['h'].clone()))
+            else:
+                mapped_feats[ntype] = self.non_linear(self.encoder[ntype](h_features[ntype].clone()))
 
         # Heterogeneous Graph Generation
         new_adjs = dict()
@@ -218,8 +238,10 @@ class HGSL(BaseModel):
             # Feature Graph Generation
             fg_direct = self.fgg_direct[undirected_relation](mapped_feats[canonical_etype[0]],
                                                              mapped_feats[canonical_etype[2]])
-
-            fmat_l, fmat_r = hg.nodes[canonical_etype[0]].data['h'], hg.nodes[canonical_etype[2]].data['h']
+            if 'h' in hg.nodes[canonical_etype[0]].data.keys() and 'h' in hg.nodes[canonical_etype[2]].data.keys():
+                fmat_l, fmat_r = hg.nodes[canonical_etype[0]].data['h'], hg.nodes[canonical_etype[2]].data['h']
+            else:
+                fmat_l, fmat_r = h_features[canonical_etype[0]], h_features[canonical_etype[2]]
             sim_l, sim_r = self.fgg_left[undirected_relation](fmat_l, fmat_l), self.fgg_right[undirected_relation](
                 fmat_r, fmat_r)
             fg_left, fg_right = sim_l.mm(ori_g), sim_r.mm(ori_g.t()).t()
@@ -245,8 +267,6 @@ class HGSL(BaseModel):
 
 class MetricCalcLayer(nn.Module):
     r"""
-    Description
-    -----------
     Calculate metric in equation 3 of paper.
 
     Parameters
@@ -271,8 +291,6 @@ class MetricCalcLayer(nn.Module):
 
 class GraphGenerator(nn.Module):
     r"""
-    Description
-    -----------
     Generate a graph using similarity.
     """
     def __init__(self, dim, num_head=2, threshold=0.1, dev=None):
@@ -318,8 +336,6 @@ class GraphGenerator(nn.Module):
 
 class GraphChannelAttLayer(nn.Module):
     r"""
-    Description
-    -----------
     The graph channel attention layer in equation 7, 9 and 10 of paper.
     """
     def __init__(self, num_channel):
@@ -343,8 +359,6 @@ class GraphChannelAttLayer(nn.Module):
 
 class GCN(nn.Module):
     r"""
-    Description
-    -----------
     The downstream GCN model.
     """
     def __init__(self, nfeat, nhid, nclass, dropout):
@@ -370,8 +384,6 @@ class GCN(nn.Module):
 
 class GraphConvolution(nn.Module):
     r"""
-    Description
-    -----------
     The downstream GCN layer.
     """
     def __init__(self, in_features, out_features, bias=True):

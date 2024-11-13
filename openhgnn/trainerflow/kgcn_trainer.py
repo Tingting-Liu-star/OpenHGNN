@@ -25,9 +25,9 @@ class KGCNTrainer(BaseFlow):
         if args.dataset == 'LastFM4KGCN':
             self.ratingsGraph = self.task.dataset.g_1.to(self.device)
             self.neighborList = [8]
-            self.trainIndex, self.evalIndex, self.testIndex = self.task.get_idx()
+            self.trainIndex, self.evalIndex, self.testIndex = self.task.get_split()
 
-        self.model = build_model(self.model_name).build_model_from_args(self.args, self.hg).to(self.device)
+        self.model = build_model(self.model).build_model_from_args(self.args, self.hg).to(self.device)
         self.optimizer = th.optim.Adam(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.weight_decay)
 
     def KGCNCollate(self, index):
@@ -44,8 +44,9 @@ class KGCNTrainer(BaseFlow):
         inputData = np.delete(inputData, deleteindex, axis=0)
         self.renew_weight(inputData)
         sampler = dgl.dataloading.MultiLayerNeighborSampler(self.neighborList)
-        dataloader = dgl.dataloading.NodeDataLoader(
-            self.hg, list(inputData[:, 1]), sampler,
+        dataloader = dgl.dataloading.DataLoader(
+            self.hg, th.LongTensor(inputData[:, 1]).to(device=self.hg.device), sampler,
+            device=self.hg.device,
             batch_size=1024,
             shuffle=True,
             drop_last=False,
@@ -62,8 +63,8 @@ class KGCNTrainer(BaseFlow):
         return
 
     def train(self):   
-        epoch_iter = self.args.epoch_iter
-        for self.epoch in range(epoch_iter):
+        max_epoch = self.args.max_epoch
+        for self.epoch in range(max_epoch):
             self._mini_train_step()
             print('train_data:')
             self.evaluate(self.trainIndex)
@@ -81,6 +82,7 @@ class KGCNTrainer(BaseFlow):
         L = 0
         import time
         t0 = time.time()
+        # length = len(self.dataloader_it)
         for block, inputData in self.dataloader_it:
             t1 =time.time()
             self.labels, self.scores = self.model(block, inputData)

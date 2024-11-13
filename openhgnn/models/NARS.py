@@ -8,9 +8,6 @@ import dgl.function as fn
 @register_model('NARS')
 class NARS(BaseModel):
     r"""
-
-        Description
-        -----------
         `SCALABLE GRAPH NEURAL NETWORKS FOR HETEROGENEOUS GRAPHS <https://arxiv.org/pdf/2011.09679.pdf>`_.
 
         Given a heterogeneous graph :math:`G` and its edge relation type set :math:`\mathcal{R}`,
@@ -27,10 +24,6 @@ class NARS(BaseModel):
 
 
         where :math:`N_i(v)` is the set of neighbors of node :math:`v` in :math:`G_i`.
-
-
-        AGGREGATING SIGN FEATURES FROM SAMPLED SUBGRAPHS
-        --------------------------------------------------
 
         For each layer :math:`l`, we let the model adaptively learn which relation-subgraph features to use by aggregating
         features from different subgraphs :math:`G_i` with learnable 1-D convolution. The aggregated :math:`l`-hop
@@ -115,14 +108,11 @@ class NARS(BaseModel):
 
 def preprocess_features(g, mps, args, device, predict):
     """
-        Description
-        -----------
-
         pre-process heterogeneous graph g to generate neighbor-averaged features
         for each relation subsets
 
         Parameters
-        ------
+        -----------
         g :
             heterogeneous graph
         rel_subsets :
@@ -137,14 +127,14 @@ def preprocess_features(g, mps, args, device, predict):
             new features of each relation subsets
 
     """
-    category_dim = g.nodes[predict].data["h"].shape[1]
+    category_dim = g.nodes[predict].data["feat"].shape[1]
     for ntype in g.ntypes:
-        ntype_dim = g.nodes[ntype].data["h"].shape[1]
+        ntype_dim = g.nodes[ntype].data["feat"].shape[1]
         if category_dim != ntype_dim:
             rand_weight = th.Tensor(ntype_dim, category_dim).uniform_(-0.5, 0.5).to(device)
-            g.nodes[ntype].data["h"] = th.matmul(g.nodes[ntype].data["h"], rand_weight)
+            g.nodes[ntype].data["feat"] = th.matmul(g.nodes[ntype].data["feat"], rand_weight)
 
-    num_paper, feat_size = g.nodes[predict].data["h"].shape
+    num_paper, feat_size = g.nodes[predict].data["feat"].shape
 
     new_feats = [th.zeros(num_paper, len(mps), feat_size) for _ in range(args.num_hops + 1)]
 
@@ -159,14 +149,11 @@ def preprocess_features(g, mps, args, device, predict):
 
 def gen_rel_subset_feature(g, rel_subset, args, device, predict):
     """
-        Description
-        -----------
-
         Build relation subgraph given relation subset and generate multi-hop
         neighbor-averaged feature on this subgraph
 
-
-        ------
+        Parameters
+        ----------
         g :
             Heterogeneous graph
         rel_subset :
@@ -187,10 +174,10 @@ def gen_rel_subset_feature(g, rel_subset, args, device, predict):
     # set node feature and calc deg
     for ntype in ntypes:
         num_nodes = new_g.number_of_nodes(ntype)
-        if num_nodes < g.nodes[ntype].data["h"].shape[0]:
-            new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["h"][:num_nodes, :]
+        if num_nodes < g.nodes[ntype].data["feat"].shape[0]:
+            new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["feat"][:num_nodes, :]
         else:
-            new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["h"]
+            new_g.nodes[ntype].data["hop_0"] = g.nodes[ntype].data["feat"]
         deg = 0
         for etype in new_g.etypes:
             _, _, dtype = new_g.to_canonical_etype(etype)
@@ -230,9 +217,6 @@ def gen_rel_subset_feature(g, rel_subset, args, device, predict):
 
 class FeedForwardNet(nn.Module):
     """
-        Description
-        -----------
-
         A feedforward net.
 
         Input
@@ -243,23 +227,23 @@ class FeedForwardNet(nn.Module):
             hidden layer dimention
         out_feats :
             output feature dimention
-        n_layers :
+        num_layers :
             number of layers
         dropout :
             dropout rate
     """
-    def __init__(self, in_feats, hidden, out_feats, n_layers, dropout):
+    def __init__(self, in_feats, hidden, out_feats, num_layers, dropout):
         super(FeedForwardNet, self).__init__()
         self.layers = nn.ModuleList()
-        self.n_layers = n_layers
-        if n_layers == 1:
+        self.num_layers = num_layers
+        if num_layers == 1:
             self.layers.append(nn.Linear(in_feats, out_feats))
         else:
             self.layers.append(nn.Linear(in_feats, hidden))
-            for i in range(n_layers - 2):
+            for i in range(num_layers - 2):
                 self.layers.append(nn.Linear(hidden, hidden))
             self.layers.append(nn.Linear(hidden, out_feats))
-        if self.n_layers > 1:
+        if self.num_layers > 1:
             self.prelu = nn.PReLU()
             self.dropout = nn.Dropout(dropout)
         self.reset_parameters()
@@ -273,16 +257,13 @@ class FeedForwardNet(nn.Module):
     def forward(self, x):
         for layer_id, layer in enumerate(self.layers):
             x = layer(x)
-            if layer_id < self.n_layers - 1:
+            if layer_id < self.num_layers - 1:
                 x = self.dropout(self.prelu(x))
         return x
 
 
 class SIGN(nn.Module):
     """
-        Description
-        -----------
-
         The SIGN model.
 
         Parameters
@@ -295,7 +276,7 @@ class SIGN(nn.Module):
             output feature dimention
         num_hops :
             number of hops
-        n_layers :
+        num_layers :
             number of layers
         dropout :
             dropout rate
@@ -304,7 +285,7 @@ class SIGN(nn.Module):
 
     """
     def __init__(
-        self, in_feats, hidden, out_feats, num_hops, n_layers, dropout, input_drop
+        self, in_feats, hidden, out_feats, num_hops, num_layers, dropout, input_drop
     ):
         super(SIGN, self).__init__()
         self.dropout = nn.Dropout(dropout)
@@ -313,10 +294,10 @@ class SIGN(nn.Module):
         self.input_drop = input_drop
         for i in range(num_hops):
             self.inception_ffs.append(
-                FeedForwardNet(in_feats, hidden, hidden, n_layers, dropout)
+                FeedForwardNet(in_feats, hidden, hidden, num_layers, dropout)
             )
         self.project = FeedForwardNet(
-            num_hops * hidden, hidden, out_feats, n_layers, dropout
+            num_hops * hidden, hidden, out_feats, num_layers, dropout
         )
 
     def forward(self, feats):
@@ -331,9 +312,6 @@ class SIGN(nn.Module):
 
 class WeightedAggregator(nn.Module):
     """
-        Description
-        -----------
-
         Get new features by multiplying the old features by the weight matrix.
 
         Parameters

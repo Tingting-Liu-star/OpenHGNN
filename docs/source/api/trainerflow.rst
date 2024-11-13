@@ -3,50 +3,34 @@
 Trainerflow
 =================================
 
-base\_flow
---------------------------------------
+.. currentmodule:: openhgnn.trainerflow
 
-.. automodule:: openhgnn.trainerflow.base_flow
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. autosummary::
+    :nosignatures:
+    :toctree: ../generated
+    :template: _templates/class.rst
 
-node classification flow
-------------------------------------------------
+    openhgnn.trainerflow.BaseFlow
+    openhgnn.trainerflow.NodeClassification
+    openhgnn.trainerflow.LinkPrediction
+    openhgnn.trainerflow.Recommendation
+    openhgnn.trainerflow.HetGNNTrainer
+    openhgnn.trainerflow.HGTTrainer
+    openhgnn.trainerflow.KGCNTrainer
+    openhgnn.trainerflow.HeGANTrainer
+    openhgnn.trainerflow.Metapath2VecTrainer
+    openhgnn.trainerflow.HERecTrainer
+    openhgnn.trainerflow.HeCoTrainer
+    openhgnn.trainerflow.DMGI_trainer
+    openhgnn.trainerflow.SLiCETrainer
+    openhgnn.trainerflow.hde_trainer
+    openhgnn.trainerflow.GATNE
+    openhgnn.trainerflow.HANNodeClassification
+    openhgnn.trainerflow.HANLinkPrediction
+    openhgnn.trainerflow.Mg2vecTrainer
+    openhgnn.trainerflow.DHNE_trainer
+    openhgnn.trainerflow.DiffMG_trainer
+    openhgnn.trainerflow.MeiRECTrainer
+    openhgnn.trainerflow.KTNTrainer
+    openhgnn.trainerflow.SeHGNNtrainer
 
-.. automodule:: openhgnn.trainerflow.node_classification
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-link prediction flow
---------------------------------------------
-
-.. automodule:: openhgnn.trainerflow.link_prediction
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-recommendation flow
------------------------------------------
-
-.. automodule:: openhgnn.trainerflow.recommendation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-hetgnn trainer flow
--------------------------------------------
-
-.. automodule:: openhgnn.trainerflow.hetgnn_trainer
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-nshe trainer flow
------------------------------------------
-
-.. automodule:: openhgnn.trainerflow.nshe_trainer
-   :members:
-   :undoc-members:
-   :show-inheritance:

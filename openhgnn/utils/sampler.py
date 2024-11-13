@@ -13,33 +13,33 @@ from collections import Counter
 from torch.utils.data import IterableDataset, DataLoader
 
 
-def get_node_data_loader(node_neighbors_min_num: int, n_layers: int,
+def get_node_data_loader(node_neighbors_min_num: int, num_layers: int,
                          graph: dgl.DGLGraph, batch_size: int, sampled_node_type: str,
                          train_idx: th.Tensor, valid_idx: th.Tensor, test_idx: th.Tensor,
-                         shuffle: bool = True, drop_last: bool = False, num_workers: int = 4):
+                         shuffle: bool = True, drop_last: bool = False, num_workers: int = 0, device: str = 'cpu', **kwargs):
     """
     get graph node data loader, including train_loader, val_loader and test_loader
     :return:
     """
     # list of neighbors to sample per edge type for each GNN layer
     sample_nodes_num = []
-    for layer in range(n_layers):
+    for layer in range(num_layers):
         sample_nodes_num.append({etype: node_neighbors_min_num + layer for etype in graph.canonical_etypes})
 
     # neighbor sampler
     sampler = dgl.dataloading.MultiLayerNeighborSampler(sample_nodes_num)
 
-    train_loader = dgl.dataloading.NodeDataLoader(
+    train_loader = dgl.dataloading.DataLoader(
         graph, {sampled_node_type: train_idx}, sampler,
-        batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
+        batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers, device=device, use_ddp=kwargs['use_distributed'])
 
-    val_loader = dgl.dataloading.NodeDataLoader(
+    val_loader = dgl.dataloading.DataLoader(
         graph, {sampled_node_type: valid_idx}, sampler,
-        batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
+        batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers, device=device)
 
-    test_loader = dgl.dataloading.NodeDataLoader(
+    test_loader = dgl.dataloading.DataLoader(
         graph, {sampled_node_type: test_idx}, sampler,
-        batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
+        batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers, device=device)
 
     return train_loader, val_loader, test_loader
 

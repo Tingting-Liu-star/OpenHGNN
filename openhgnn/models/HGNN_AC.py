@@ -7,8 +7,6 @@ from . import BaseModel, register_model
 @register_model('HGNN_AC')
 class HGNN_AC(BaseModel):
     r"""
-    Desctiption
-    -----------
     HGNN_AC was introduced in `HGNN_AC <https://dl.acm.org/doi/10.1145/3442381.3449914>`__.
         
     It included four parts:
@@ -106,7 +104,7 @@ class HGNN_AC(BaseModel):
     """
     @classmethod
     def build_model_from_args(cls, args, hg):
-        return cls(in_dim = hg.nodes[hg.ntypes[0]].data['emb'].shape[1], 
+        return cls(in_dim = hg.nodes[hg.ntypes[0]].data['h'].shape[1], 
                                 hidden_dim = args.attn_vec_dim, 
                                 dropout = args.dropout, activation = F.elu, 
                                 num_heads = args.num_heads,
@@ -121,8 +119,6 @@ class HGNN_AC(BaseModel):
 
     def forward(self, bias, emb_dest, emb_src, feature_src):
         r"""
-        Description
-        -----------
         This is the forward part of model HGNN_AC
 
         Parameters
@@ -153,8 +149,6 @@ class HGNN_AC(BaseModel):
 
 class AttentionLayer(nn.Module):
     r"""
-    Description
-    -------------------
     This is the attention process used in HGNN\_AC. For more details, you can check here_.
     
     Parameters
@@ -185,8 +179,6 @@ class AttentionLayer(nn.Module):
 
     def forward(self, bias, emb_dest, emb_src, feature_src):
         r"""
-        Description
-        ----------------
         This is the forward part of the attention process.
         
         Parameters

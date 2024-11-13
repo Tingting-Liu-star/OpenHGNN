@@ -8,9 +8,9 @@ Code from author:[https://github.com/yule-BUAA/R-HGNN](https://github.com/yule-B
 
 Clone the Openhgnn-DGL
 
-    ```bash
-    python main.py -m RHGNN -t node_classification -d imdb4GTN -g 0 --use_best_config
-    ```
+```bash
+python main.py -m RHGNN -t node_classification -d imdb4GTN -g 0 --use_best_config
+```
 
 Candidate dataset: imdb4GTN/acm4GTN
 
@@ -36,7 +36,7 @@ Node classification
 
 ### model
 
-  
+
 - [RHGNN](../../utils/utils.py)
     - Contain two R_HGNN_layer、 relation_fusing and one classifier  
 
@@ -66,7 +66,7 @@ Node classification
 num_heads  = 8            
 hidden_units = 64
 relation_hidden_units = 8
-n_layers = 2
+num_layers = 2
 learning_rate = 0.001
 dropout = 0.5
 residual = True

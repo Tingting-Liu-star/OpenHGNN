@@ -1,13 +1,10 @@
-import copy
 import dgl
 import torch as th
-import numpy as np
 from tqdm import tqdm
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from ..models import build_model
 from . import BaseFlow, register_flow
-from ..tasks import build_task
 from ..sampler.HetGNN_sampler import SkipGramBatchSampler, HetGNNCollator, NeighborSampler, hetgnn_graph
 from ..utils import EarlyStopping
 
@@ -27,7 +24,7 @@ class HetGNNTrainer(BaseFlow):
         super(HetGNNTrainer, self).__init__(args)
 
         self.category = self.task.dataset.category
-        self.model = build_model(self.model_name).build_model_from_args(self.args, self.hg).to(self.device)
+        self.model = build_model(self.model).build_model_from_args(self.args, self.hg).to(self.device)
 
         self.optimizer = (
             th.optim.Adam(self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -51,11 +48,6 @@ class HetGNNTrainer(BaseFlow):
                 self.dataloader_it = iter(dataloader)
                 self.hg = self.hg.to(self.args.device)
                 self.het_graph = self.het_graph.to(self.args.device)
-            # elif self.args.model == 'Metapath2vec':
-            #     batch_sampler = SkipGramBatchSampler(self.hg, self.args.batch_size, self.args.window_size, self.args.rw_length)
-            #     collator = MP2vecCollator(self.hg.ntypes, batch_sampler.num_nodes)
-            #     dataloader = DataLoader(batch_sampler, collate_fn=collator.collate_train, num_workers=self.args.num_workers)
-            #     self.dataloader_it = iter(dataloader)
 
         return
 
@@ -68,14 +60,18 @@ class HetGNNTrainer(BaseFlow):
                 loss = self._mini_train_step()
             else:
                 loss = self._full_train_setp()
-            epoch_iter.set_description('Epoch{}: Loss:{:.4f}'.format(epoch, loss))
-            early_stop = stopper.loss_step(loss, self.model)
-            if early_stop:
-                print('Early Stop!\tEpoch:' + str(epoch))
-                break
+                
+            if epoch % self.evaluate_interval == 0:
+                early_stop = stopper.loss_step(loss, self.model)
+                metrics = self._test_step()
+                self.logger.train_info(f"Epoch{epoch}, train loss:{loss:.4f}" + self.logger.metric2str(metrics))
+                if early_stop:
+                    self.logger.train_info(f"Early Stop!\tEpoch:{epoch}")
+                    break
+                
         stopper.load_model(self.model)
         metrics = self._test_step()
-        return dict(metrics=metrics)
+        return metrics
 
     def _full_train_setp(self):
         self.model.train()
@@ -128,11 +124,11 @@ class HetGNNTrainer(BaseFlow):
             logits = logits if logits else self.model(self.het_graph, h)
             logits = logits[self.category].to('cpu')
             if self.args.task == 'node_classification':
-                metric = self.task.evaluate(logits, 'f1_lr')
-                return metric
+                metric = self.task.downstream_evaluate(logits, 'f1_lr')
+                return {'test': metric}
             elif self.args.task == 'link_prediction':
-                metric = self.task.evaluate(logits, 'academic_lp')
-                return metric
+                metric = self.task.downstream_evaluate(logits, 'academic_lp')
+                return {'test': metric}
 
 
 
